@@ -53,22 +53,19 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    *  Initialization
    ****************************************************************************/
   if (!is_initialized_) {
-    /**
-    TODO:
-      * Initialize the state ekf_.x_ with the first measurement.
-      * Create the covariance matrix.
-      * Remember: you'll need to convert radar from polar to cartesian coordinates.
-    */
     // first measurement
     cout << "EKF: " << endl;
-    ekf_.x_ = VectorXd(4);
+    ekf_.x_ = VectorXd::Zero(4);
 
     previous_timestamp_ = measurement_pack.timestamp_;
-
+    
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-     ekf_.x_ = RadarMeasurement::getCartesian(measurement_pack.raw_measurements_);
+      // if measurement is from a radar sensor both position and velocity can be initialized
+      ekf_.x_ = RadarMeasurement::getCartesian(measurement_pack.raw_measurements_);
+      velocity_initialized_ = true;
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+      // for lidar measurements only the position can be initialized
       ekf_.x_(0) = measurement_pack.raw_measurements_(0);
       ekf_.x_(1) = measurement_pack.raw_measurements_(1);
     }
@@ -92,17 +89,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   /*****************************************************************************
    *  Prediction
    ****************************************************************************/
-
-  /**
-   TODO:
-     * Update the state transition matrix F according to the new elapsed time.
-      - Time is measured in seconds.
-     * Update the process noise covariance matrix.
-     * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
-   */
-
-  cout << "Processing measurement..." << endl;
-
   float dt = (measurement_pack.timestamp_ -previous_timestamp_) / 1000000.0;
   previous_timestamp_ = measurement_pack.timestamp_;
 
@@ -110,7 +96,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 	float dt_3 = dt_2 * dt;
 	float dt_4 = dt_3 * dt;
 
-	//Modify the F matrix so that the time is integrated
+	// Modify the F matrix so that the time is integrated
 	ekf_.F_(0, 2) = dt;
 	ekf_.F_(1, 3) = dt;
 
@@ -132,13 +118,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   /*****************************************************************************
    *  Update
    ****************************************************************************/
-
-  /**
-   TODO:
-     * Use the sensor type to perform the update step.
-     * Update the state and covariance matrices.
-   */
-
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     ekf_.R_ = R_radar_;
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);

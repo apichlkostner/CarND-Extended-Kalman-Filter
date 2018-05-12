@@ -13,13 +13,14 @@ MatrixXd RadarMeasurement::CalculateJacobian(const VectorXd& x_state) {
 	float p_xy2s = sqrt(p_xy2);
 	float p_xy32 = p_xy2 * p_xy2s;
 	
-	if (p_xy2 < 0.0000001)
+	// near origin the polar coordinates are assumed to be 0
+	if (p_xy2 < 0.0000001) {
+		Hj << 0,0,0,0,0,0,0,0,0,0,0,0;
 	    return Hj;
+	}
 	
 	float r2c0 = py * (vx * py - vy * px) / p_xy32;
 	float r2c1 = px * (vy * px - vx * py) / p_xy32;
-	
-	//cout << "vx " << vx << " py " << py << " vy " << vy << " px " << px << endl;
 	
 	Hj << px / p_xy2s, py / p_xy2s,    0.0,    0.0,
 	     -py / p_xy2,  px / p_xy2,     0.0,    0.0,

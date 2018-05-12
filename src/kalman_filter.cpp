@@ -47,23 +47,24 @@ void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
 
 void KalmanFilter::Predict() {
   x_ = F_ * x_;
-	MatrixXd Ft = F_.transpose();
-	P_ = F_ * P_ * Ft + Q_;
+  P_ = F_ * P_ * F_.transpose() + Q_;
 }
 
 void KalmanFilter::Update(const VectorXd &z) {
   VectorXd z_pred = H_ * x_;
   VectorXd y = z - z_pred;
-  MatrixXd Ht = H_.transpose();
+
+  MatrixXd Ht = H_.transpose(); // used twice
   MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
   MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * Si;
+
+  MatrixXd K = PHt * S.inverse();
 
   //new estimate
   x_ = x_ + (K * y);
   long x_size = x_.size();
   MatrixXd I = MatrixXd::Identity(x_size, x_size);
+
   P_ = (I - K * H_) * P_;
 }
 
@@ -71,21 +72,25 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
 	MatrixXd H = RadarMeasurement::CalculateJacobian(x_);
 	VectorXd z_pred = RadarMeasurement::getPolar(x_);	
 	VectorXd y = z - z_pred;
+	// normalize phi
+#if 1
 	if (y(1) > M_PI)
 		y(1) -= 2*M_PI;
 	if (y(1) < -M_PI)
 		y(1) += 2*M_PI;
-		//cout << "---------------------\nDIFF is too high: z = " << z << "  z_pred = " << z_pred << endl << flush;
-	cout << "Angle ---------------- " << z(1) << "  " << z_pred(1) << endl<<flush;
-	MatrixXd Ht = H.transpose();
+#else
+	y(1) = atan2(sin(y(1)), cos(y(1)));
+#endif
+	MatrixXd Ht = H.transpose();  // used twice
 	MatrixXd S = H * P_ * Ht + R_;
-	MatrixXd Si = S.inverse();
 	MatrixXd PHt = P_ * Ht;
-	MatrixXd K = PHt * Si;
+	MatrixXd K = PHt * S.inverse();
 
 	//new estimate
 	x_ = x_ + (K * y);
+	
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
+
 	P_ = (I - K * H) * P_;
 }

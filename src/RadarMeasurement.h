@@ -58,13 +58,13 @@ public:
 
     float pxy2 = sqrt(px*px + py*py);
 
+    // near the origin the polar coordinates are assumed to be 0
     if (pxy2 < 0.000001) {
-      std::cout << "pxy2 too small: " << pxy2 << std::endl << flush;
-
       polar << 0, 0, 0;
     } else {
-      //cout << "py = " << py << " px = " << px << " atan2 = " << atan2(py, px) << endl << flush;
-      polar << pxy2, atan2(py, px), (px*vx + py*vy) / pxy2;
+      polar << pxy2,
+               atan2(py, px),
+               (px*vx + py*vy) / pxy2;
     }
 
     return polar;
