@@ -11,10 +11,16 @@ Tools::~Tools() {}
 
 VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
                               const vector<VectorXd> &ground_truth) {
-  /**
-  TODO:
-    * Calculate the RMSE here.
-  */
+  VectorXd rmse = VectorXd::Zero(4);
+
+  for (size_t i=0; i < estimations.size(); i++) {
+    VectorXd delta = estimations[i] - ground_truth[i];
+    rmse += delta.cwiseProduct(delta);
+  }
+
+  rmse /= estimations.size();
+  
+  return rmse;
 }
 
 MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {

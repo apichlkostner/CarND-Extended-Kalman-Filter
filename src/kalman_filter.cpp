@@ -1,4 +1,5 @@
 #include "kalman_filter.h"
+#include "RadarMeasurement.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -6,7 +7,31 @@ using Eigen::VectorXd;
 // Please note that the Eigen library does not initialize 
 // VectorXd or MatrixXd objects with zeros upon creation.
 
-KalmanFilter::KalmanFilter() {}
+KalmanFilter::KalmanFilter() {
+	//state covariance matrix P
+	P_ = MatrixXd(4, 4);
+	P_ << 1, 0, 0, 0,
+			  0, 1, 0, 0,
+			  0, 0, 1000, 0,
+			  0, 0, 0, 1000;
+
+	//measurement covariance
+	R_ = MatrixXd(2, 2);
+	R_ << 0.0225, 0,
+			  0, 0.0225;
+
+	//measurement matrix
+	H_ = MatrixXd(2, 4);
+	H_ << 1, 0, 0, 0,
+		  0, 1, 0, 0;
+
+	//the initial transition matrix F_
+	F_ = MatrixXd(4, 4);
+	F_ << 	1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1;
+}
 
 KalmanFilter::~KalmanFilter() {}
 
@@ -21,22 +46,46 @@ void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
 }
 
 void KalmanFilter::Predict() {
-  /**
-  TODO:
-    * predict the state
-  */
+  x_ = F_ * x_;
+	MatrixXd Ft = F_.transpose();
+	P_ = F_ * P_ * Ft + Q_;
 }
 
 void KalmanFilter::Update(const VectorXd &z) {
-  /**
-  TODO:
-    * update the state by using Kalman Filter equations
-  */
+  VectorXd z_pred = H_ * x_;
+  VectorXd y = z - z_pred;
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S = H_ * P_ * Ht + R_;
+  MatrixXd Si = S.inverse();
+  MatrixXd PHt = P_ * Ht;
+  MatrixXd K = PHt * Si;
+
+  //new estimate
+  x_ = x_ + (K * y);
+  long x_size = x_.size();
+  MatrixXd I = MatrixXd::Identity(x_size, x_size);
+  P_ = (I - K * H_) * P_;
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
-  /**
-  TODO:
-    * update the state by using Extended Kalman Filter equations
-  */
+	MatrixXd H = RadarMeasurement::CalculateJacobian(x_);
+	VectorXd z_pred = RadarMeasurement::getPolar(x_);	
+	VectorXd y = z - z_pred;
+	if (y(1) > M_PI)
+		y(1) -= 2*M_PI;
+	if (y(1) < -M_PI)
+		y(1) += 2*M_PI;
+		//cout << "---------------------\nDIFF is too high: z = " << z << "  z_pred = " << z_pred << endl << flush;
+	cout << "Angle ---------------- " << z(1) << "  " << z_pred(1) << endl<<flush;
+	MatrixXd Ht = H.transpose();
+	MatrixXd S = H * P_ * Ht + R_;
+	MatrixXd Si = S.inverse();
+	MatrixXd PHt = P_ * Ht;
+	MatrixXd K = PHt * Si;
+
+	//new estimate
+	x_ = x_ + (K * y);
+	long x_size = x_.size();
+	MatrixXd I = MatrixXd::Identity(x_size, x_size);
+	P_ = (I - K * H) * P_;
 }
