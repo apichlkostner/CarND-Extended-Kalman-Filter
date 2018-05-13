@@ -22,6 +22,32 @@ The system model uses position and velocity and assumes a constant veloctiy vect
 
 ## Lidar sensor
 
+# Implementation
+
+## Classes
+* `FusionEKF`
+  * is called by `main()` with new measurements
+  * initializes the kalman filter
+  * calls the kalman filter for prediction and update steps
+* `kalman_filter`
+* `System`
+  * system matrix
+  * covariance matrix
+* `Measurement`
+  * covariance matrix
+  * `LidarMeasurement`
+    * measurement matrix for kalman filter
+  * `RadarMeasurement`
+    * coordinate transformation polar <-> cartesian
+    * jacobian for extended kalman filter
+* `Tools`
+  * calculation of RMSE
+
+## Optimization
+* If two measurements arrive at the same time only one predict step is done.
+* If the first measurement is from a lidar sensor the velocity can't be initialized. This is then done as soon as the first radar measurement arrives.
+* Smaller methods are implemented directly in the header file
+
 # Results
 
 ## Expectations
