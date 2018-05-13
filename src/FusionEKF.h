@@ -26,25 +26,25 @@ public:
   */
   void ProcessMeasurement(const MeasurementPackage &measurement_pack);
 
-  /**
-  * Kalman Filter update and prediction math lives in here.
-  */
-  KalmanFilter ekf_;
+  void initialize_ekf(const MeasurementPackage &measurement_pack);
+  void initialize_ekf_velocity(const MeasurementPackage &measurement_pack);
+
+  KalmanFilter& ekf() { return ekf_; }
 
 private:
+  /**
+    * Kalman Filter update and prediction math lives in here.
+    */
+  KalmanFilter ekf_;
   // check whether the tracking toolbox was initialized or not (first measurement)
-  bool is_initialized_;
-  bool velocity_initialized_;
+  bool is_initialized_ = false;
+  bool velocity_initialized_ = false;
 
   // previous timestamp
   long long previous_timestamp_;
 
   // tool object used to compute Jacobian and RMSE
   Tools tools;
-  Eigen::MatrixXd R_laser_;
-  Eigen::MatrixXd R_radar_;
-  Eigen::MatrixXd H_laser_;
-  Eigen::MatrixXd Hj_;
 };
 
 #endif /* FusionEKF_H_ */

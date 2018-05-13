@@ -3,6 +3,7 @@
 #include "Eigen/Dense"
 #include "System.h"
 #include "RadarMeasurement.h"
+#include "LidarMeasurement.h"
 
 class KalmanFilter {
 public:
@@ -19,7 +20,7 @@ public:
 
   RadarMeasurement radar_measurement_;
 
-  Measurement lidar_measurement_;
+  LidarMeasurement lidar_measurement_;
 
   /**
    * Constructor
@@ -50,6 +51,13 @@ public:
    */
   void UpdateRadar(const Eigen::VectorXd &z);
 
+  void InitPosition(const Eigen::VectorXd x);
+
+  void InitVelocity(const Eigen::VectorXd v);
+
+  const Eigen::VectorXd x() const { return x_; };
+  const Eigen::MatrixXd P() { return P_; };
+  const Eigen::MatrixXd Q() { return Q_; };
 };
 
 #endif /* KALMAN_FILTER_H_ */

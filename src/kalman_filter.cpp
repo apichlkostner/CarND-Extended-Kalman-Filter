@@ -66,3 +66,15 @@ void KalmanFilter::UpdateRadar(const VectorXd &z) {
 
 	P_ = (I - K * H) * P_;
 }
+
+void KalmanFilter::InitPosition(const Eigen::VectorXd x) {
+	constexpr int xpos = 0;
+	x_(0) = x(xpos);
+	x_(1) = x(xpos + 1);
+}
+
+void KalmanFilter::InitVelocity(const Eigen::VectorXd x) {
+	constexpr int vpos = 2;
+	x_(0) = x(vpos);
+	x_(1) = x(vpos + 1);
+}
