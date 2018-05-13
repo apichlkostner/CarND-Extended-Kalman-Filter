@@ -2,10 +2,10 @@
 #define KALMAN_FILTER_H_
 #include "Eigen/Dense"
 #include "System.h"
+#include "RadarMeasurement.h"
 
 class KalmanFilter {
 public:
-
   // state vector
   Eigen::VectorXd x_;
 
@@ -15,10 +15,11 @@ public:
   // process covariance matrix
   Eigen::MatrixXd Q_;
 
-  // measurement matrix
-  Eigen::MatrixXd H_;
-
   System system_;
+
+  RadarMeasurement radar_measurement_;
+
+  Measurement lidar_measurement_;
 
   /**
    * Constructor
@@ -41,13 +42,13 @@ public:
    * Updates the state by using standard Kalman Filter equations
    * @param z The measurement at k+1
    */
-  void Update(const Eigen::VectorXd &z, const Eigen::MatrixXd& R);
+  void UpdateLidar(const Eigen::VectorXd &z);
 
   /**
    * Updates the state by using Extended Kalman Filter equations
    * @param z The measurement at k+1
    */
-  void UpdateEKF(const Eigen::VectorXd &z, const Eigen::MatrixXd& R);
+  void UpdateRadar(const Eigen::VectorXd &z);
 
 };
 

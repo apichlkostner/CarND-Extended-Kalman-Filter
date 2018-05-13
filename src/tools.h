@@ -24,6 +24,19 @@ public:
   */
   VectorXd CalculateRMSE(const vector<VectorXd> &estimations, const vector<VectorXd> &ground_truth);
 
+  static double NormalizeAnge(double angle) {
+#if 1
+    if (angle > M_PI) {
+      angle -= 2*M_PI;
+    }
+    else if (angle < -M_PI) {
+      angle += 2*M_PI;
+    }
+#else
+    angle = atan2(angle, angle));
+#endif
+    return angle;
+  }
 };
 
 #endif /* TOOLS_H_ */

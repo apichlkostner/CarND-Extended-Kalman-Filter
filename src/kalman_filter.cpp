@@ -1,13 +1,10 @@
 #include "kalman_filter.h"
-#include "RadarMeasurement.h"
+#include "tools.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-// Please note that the Eigen library does not initialize 
-// VectorXd or MatrixXd objects with zeros upon creation.
-
-KalmanFilter::KalmanFilter() { //const MatrixXd& F) {
+KalmanFilter::KalmanFilter() {
 	//state covariance matrix P
 	P_ = MatrixXd(4, 4);
 	P_ << 1, 0, 0, 0,
@@ -15,10 +12,8 @@ KalmanFilter::KalmanFilter() { //const MatrixXd& F) {
 			  0, 0, 1000, 0,
 			  0, 0, 0, 1000;
 
-	//measurement matrix
-	H_ = MatrixXd(2, 4);
-	H_ << 1, 0, 0, 0,
-		  0, 1, 0, 0;
+	// state vector
+	x_ = VectorXd::Zero(4);
 }
 
 KalmanFilter::~KalmanFilter() {}
@@ -30,37 +25,34 @@ void KalmanFilter::Predict(double dt) {
 	P_ = F * P_ * F.transpose() + Q;
 }
 
-void KalmanFilter::Update(const VectorXd &z, const MatrixXd& R) {
-  VectorXd z_pred = H_ * x_;
-  VectorXd y = z - z_pred;
+void KalmanFilter::UpdateLidar(const VectorXd &z) {
+	const MatrixXd H = lidar_measurement_.H();
+	VectorXd z_pred = H * x_;
+	VectorXd y = z - z_pred;
 
-  MatrixXd Ht = H_.transpose(); // used twice
-  MatrixXd S = H_ * P_ * Ht + R;
-  MatrixXd PHt = P_ * Ht;
+	MatrixXd Ht = H.transpose(); // used twice
+	MatrixXd S = H * P_ * Ht + lidar_measurement_.R();
+	MatrixXd PHt = P_ * Ht;
 
-  MatrixXd K = PHt * S.inverse();
+	MatrixXd K = PHt * S.inverse();
 
-  //new estimate
-  x_ = x_ + (K * y);
-  long x_size = x_.size();
-  MatrixXd I = MatrixXd::Identity(x_size, x_size);
+	//new estimate
+	x_ = x_ + (K * y);
+	long x_size = x_.size();
+	MatrixXd I = MatrixXd::Identity(x_size, x_size);
 
-  P_ = (I - K * H_) * P_;
+	P_ = (I - K * H) * P_;
 }
 
-void KalmanFilter::UpdateEKF(const VectorXd &z, const MatrixXd& R) {
-	MatrixXd H = RadarMeasurement::CalculateJacobian(x_);
-	VectorXd z_pred = RadarMeasurement::getPolar(x_);	
+void KalmanFilter::UpdateRadar(const VectorXd &z) {
+	const MatrixXd R = radar_measurement_.R();
+	const MatrixXd H = RadarMeasurement::CalculateJacobian(x_);
+	const VectorXd z_pred = RadarMeasurement::cartesian2polar(x_);
+
 	VectorXd y = z - z_pred;
 	// normalize phi
-#if 1
-	if (y(1) > M_PI)
-		y(1) -= 2*M_PI;
-	if (y(1) < -M_PI)
-		y(1) += 2*M_PI;
-#else
-	y(1) = atan2(sin(y(1)), cos(y(1)));
-#endif
+	y(1) = Tools::NormalizeAnge(y(1));
+
 	MatrixXd Ht = H.transpose();  // used twice
 	MatrixXd S = H * P_ * Ht + R;
 	MatrixXd PHt = P_ * Ht;

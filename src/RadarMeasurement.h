@@ -1,38 +1,34 @@
 #ifndef RADARMEASUREMENT_H_
 #define RADARMEASUREMENT_H_
 
-#include "Eigen/Dense"
-#include <iostream>
+#include "Measurement.h"
 
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
-using namespace std;
+class RadarMeasurement : public Measurement {
 
-class RadarMeasurement {
 public:
-
-  // state vector
-  Eigen::VectorXd x_;
-
-
   /**
    * Constructor
    */
-  RadarMeasurement();
+  RadarMeasurement() : Measurement(MatrixXd(3,3)) {
+    // radar covariance matrix
+    R_ << 0.09, 0, 0,
+          0, 0.0009, 0,
+          0, 0, 0.09;
+  }
 
   /**
    * Destructor
    */
-  virtual ~RadarMeasurement();
+  virtual ~RadarMeasurement() {}
 
-
+  
   /**
    * Updates the state by using Extended Kalman Filter equations
    * @param z The measurement at k+1
    */
   static MatrixXd CalculateJacobian(const VectorXd& x_state);
 
-  static VectorXd getCartesian(const VectorXd& meas) {
+  static VectorXd polar2cartesian(const VectorXd& meas) {
     VectorXd cartesian(4);
 
     float rho = meas(0);
@@ -47,7 +43,7 @@ public:
     return cartesian;
   }
 
-  static VectorXd getPolar(const VectorXd& x_state) {
+  static VectorXd cartesian2polar(const VectorXd& x_state) {
     VectorXd polar(3);
 
     //recover state parameters
@@ -69,7 +65,6 @@ public:
 
     return polar;
   }
-
 };
 
 #endif
