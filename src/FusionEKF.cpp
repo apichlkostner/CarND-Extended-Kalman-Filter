@@ -9,6 +9,7 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
+
 /*
  * Constructor.
  */
@@ -89,41 +90,49 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   /*****************************************************************************
    *  Prediction
    ****************************************************************************/
-  float dt = (measurement_pack.timestamp_ -previous_timestamp_) / 1000000.0;
+  double dt = (measurement_pack.timestamp_ -previous_timestamp_) / 1000000.0;
   previous_timestamp_ = measurement_pack.timestamp_;
 
-	float dt_2 = dt * dt;
-	float dt_3 = dt_2 * dt;
-	float dt_4 = dt_3 * dt;
+#if 0
+  auto Q = [dt]() -> MatrixXd {
+    float dt_2 = dt * dt;
+    float dt_3 = dt_2 * dt;
+    float dt_4 = dt_3 * dt;
 
-	// Modify the F matrix so that the time is integrated
-	ekf_.F_(0, 2) = dt;
-	ekf_.F_(1, 3) = dt;
+    //set the acceleration noise components
+    constexpr float noise_ax = 9;
+    constexpr float noise_ay = 9;
+    
+    MatrixXd Q(4,4);
+    
+    Q <<  dt_4/4*noise_ax, 0, dt_3/2*noise_ax, 0,
+          0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,
+          dt_3/2*noise_ax, 0, dt_2*noise_ax, 0,
+          0, dt_3/2*noise_ay, 0, dt_2*noise_ay;
 
-	//set the acceleration noise components
-	constexpr float noise_ax = 9;
-	constexpr float noise_ay = 9;
-  
-  MatrixXd Q(4,4);
-  
-  Q <<  dt_4/4*noise_ax, 0, dt_3/2*noise_ax, 0,
-			   0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,
-			   dt_3/2*noise_ax, 0, dt_2*noise_ax, 0,
-			   0, dt_3/2*noise_ay, 0, dt_2*noise_ay;
+    return Q;
+  };
 
-  ekf_.Q_ = Q;
-  
-  ekf_.Predict();
+	auto F = [dt](const MatrixXd& F) -> MatrixXd {
+    MatrixXd Fn(F);
+    Fn(0, 2) = dt;
+    Fn(1, 3) = dt;
+
+    return Fn;
+  };
+#endif
+
+  // prediction only if time has changed till last update
+  if (dt > 0.00001)
+    ekf_.Predict(dt);
 
   /*****************************************************************************
    *  Update
    ****************************************************************************/
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-    ekf_.R_ = R_radar_;
-    ekf_.UpdateEKF(measurement_pack.raw_measurements_);
+    ekf_.UpdateEKF(measurement_pack.raw_measurements_, R_radar_);
   } else {
-    ekf_.R_ = R_laser_;
-    ekf_.Update(measurement_pack.raw_measurements_);
+    ekf_.Update(measurement_pack.raw_measurements_, R_laser_);
   }
 
   // print the output
