@@ -6,12 +6,12 @@ This project implements sensorfusion of radar and lidar sensor using an extened 
 
 The steps of this project are the following:
 
-* Implement the extended kalman filter
-* Connect the kalman filter with the simulator using websockets
-* Run the simulator and process the sensor data sent over the websockets
-* Track the object with position and velocity
-* Compare the result with the ground truth as RSME
-* Check the results with only one of the sensors used
+* Implementation of the extended kalman filter
+* Connection of the kalman filter with the simulator using websockets
+* Running the simulator and process the sensor data sent over the websockets
+* Tracking the object with position and velocity
+* Comparing the result with the ground truth as RSME
+* Checking the results with only one of the sensors used
 
 # The filter
 
@@ -19,8 +19,10 @@ The steps of this project are the following:
 The system model uses position and velocity and assumes a constant veloctiy vector.
 
 ## Radar sensor
+Measures position and velocity of the object in polar coordinates. Since the measurement function is not linear an extended kalman filter step in needed for the correction.
 
 ## Lidar sensor
+Measures only the position of the object. The measurement function is linear.
 
 # Implementation
 
@@ -44,9 +46,9 @@ The system model uses position and velocity and assumes a constant veloctiy vect
   * calculation of RMSE
 
 ## Optimization
-* If two measurements arrive at the same time only one predict step is done.
+* If two measurements arrive at nearly the same time only one predict step is done but two update steps.
 * If the first measurement is from a lidar sensor the velocity can't be initialized. This is then done as soon as the first radar measurement arrives.
-* Smaller methods are implemented directly in the header file
+* Smaller methods are implemented directly in the header file.
 
 # Results
 
@@ -63,11 +65,11 @@ As expected the result with both sensors are the best:
 
 ![Result with both radar and lidar](readme_files/result_radar_lidar.png)
 
-With radar only the position is not very exact:
+With only radar the position is not very exact:
 
 ![Result with radar only](readme_files/result_radar_only.png)
 
-With lidar only the velocity is not very exact:
+With only lidar the velocity is not very exact. And since the velocity is not initialized by the radar measurement the position is also not good averaged over the complete trajectory. If the radar measurements are only used to initialize the velocity the averaged result is much better (X: 0.22, Y: 0.15, VX: 2.1, VY: 1.3)
 
 ![Result with lidar only](readme_files/result_lidar_only.png)
 
